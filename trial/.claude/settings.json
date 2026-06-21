@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/leehyuk/project/Polyrus_프로젝트/polyrus/.venv/bin/polyrus-auto-hook"
+          }
+        ]
+      }
+    ]
+  }
+}

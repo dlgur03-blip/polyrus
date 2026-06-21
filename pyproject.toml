@@ -1,0 +1,57 @@
+[project]
+name = "polyrus-agent"
+version = "0.1.0"
+description = "검증된 비-패스(No-Pass) 추론 하니스 — Claude Code를 감싸 완료를 검증으로 집행한다"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Polyrus" }]
+keywords = ["llm", "agent", "verification", "claude-code", "no-pass", "reliability", "hook"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "anthropic>=0.40",
+]
+
+[project.urls]
+Homepage = "https://github.com/polyrus/polyrus"
+Repository = "https://github.com/polyrus/polyrus"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "mutmut>=2.4",
+    "ruff>=0.5",
+]
+keychain = ["keyring>=24"]      # OS 키체인 백엔드(6.3) — 선택
+openai = ["openai>=1.0"]        # OpenAI(호환) 모델 어댑터 — 선택
+browser = ["playwright>=1.40"]  # 브라우저 행동 안전(6.2) — 선택
+research = ["scrapling>=0.4"]   # 레퍼런스 조사(자가치유 스크래핑) — 선택. 없으면 urllib 폴백
+gemini = ["google-genai>=1.0"]  # Gemini 어댑터(§6 멀티API: 영상·이미지) — 선택
+
+[project.scripts]
+polyrus = "polyrus.cli:main"
+polyrus-stop-hook = "polyrus.adapters.claude_code.stop_hook:main"
+polyrus-auto-hook = "polyrus.adapters.claude_code.auto:auto_main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/polyrus"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

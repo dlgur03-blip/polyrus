@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+dist/
+build/
+.mutmut-cache
+
+# local credentials (never commit)
+account.env
+.env
+
+# Polyrus 런타임 산출물(세션 상태·코퍼스·위키 DB)
+.polyrus/
+*.db
+*.count
+
+# 기타 캐시/OS
+.ruff_cache/
+.mypy_cache/
+.coverage
+.DS_Store
