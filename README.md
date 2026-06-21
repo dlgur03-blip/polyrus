@@ -10,7 +10,7 @@ Polyrus는 **검증기 뱅크가 "완료"라고 판정할 때만** 종료한다.
 
 ## 빠른 시작 (개인 도구 — 60초)
 ```bash
-pip install polyrus-agent          # 배포 후. 지금은: pip install git+<이 레포 URL>
+pip install polyrus-agent          # 배포 후. 지금은: pip install git+https://github.com/dlgur03-blip/polyrus.git
 polyrus setup                      # 환경 점검 + Claude Code 자동검증 훅 등록
 polyrus serve                      # 브라우저에서 선제질문 기획 (질문은 우리가, 당신은 대답만)
 ```
@@ -20,11 +20,11 @@ polyrus serve                      # 브라우저에서 선제질문 기획 (질
 ## 🤖 Claude Code로 자동 설치
 터미널의 Claude Code에게 이 레포 주소를 주고 아래처럼 시키면 끝:
 
-> "이 깃헙 레포를 설치하고 설정해줘: `<레포 URL>`"
+> "이 깃헙 레포를 설치하고 설정해줘: `https://github.com/dlgur03-blip/polyrus`"
 
 에이전트가 실행할 절차(이 README가 곧 설치 스펙):
 ```bash
-pip install git+<레포 URL>         # 또는 클론 후 pip install -e .
+pip install git+https://github.com/dlgur03-blip/polyrus.git         # 또는 클론 후 pip install -e .
 polyrus setup                      # 훅 등록까지 자동 (미리보기: polyrus setup --dry-run)
 polyrus doctor                     # 필요 도구 점검 (없으면 친절 안내)
 ```
