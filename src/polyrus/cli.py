@@ -13,6 +13,7 @@ import argparse
 import copy
 import json
 import os
+import shutil
 from pathlib import Path
 
 HOOK_COMMAND = "polyrus-stop-hook"
@@ -210,6 +211,56 @@ def _build_homepage(result: object, args: argparse.Namespace) -> int:
         status = "완료" if item.closed else ("에스컬레이션" if item.escalated else "미해결")
         print(f"  - {item.goal}: {status}" + (f" — {item.escalation_reason}" if item.escalated else ""))
     return 0 if loop.termination is Termination.VERIFIED_COMPLETE else 1
+
+
+def _register_claude_hook(args: argparse.Namespace, *, auto: bool) -> tuple[Path, bool]:
+    """Claude Code Stop 훅 등록(멱등). 반환: (settings 경로, 새로 등록했나)."""
+    path = settings_path(args)
+    settings = _load(path)
+    command = AUTO_HOOK_COMMAND if auto else HOOK_COMMAND
+    if has_hook(settings):
+        return path, False
+    settings.setdefault("hooks", {}).setdefault("Stop", []).append(
+        {"hooks": [{"type": "command", "command": command}]}
+    )
+    if getattr(args, "dry_run", False):
+        print(json.dumps(settings, ensure_ascii=False, indent=2))
+        return path, True
+    _write(path, settings)
+    return path, True
+
+
+def cmd_connect(args: argparse.Namespace) -> int:
+    """Polyrus를 Claude/Codex CLI에 연결 — 한 명령(OpenClaw처럼). 다른 건 다 빼고 이것만.
+
+    메커니즘(정직):
+      • Claude Code → Stop-hook. Polyrus가 '끝' 선언을 가로채 검증, 미통과면 이어가게.
+      • Codex CLI   → owns-loop. Codex엔 hook이 없어 Polyrus가 codex를 구동하며 검증.
+    """
+    target = getattr(args, "target", None) or "auto"
+    claude, codex = shutil.which("claude"), shutil.which("codex")
+    auto = not getattr(args, "classic", False)
+    connected: list[str] = []
+
+    if target in ("auto", "claude", "all") and claude:
+        path, fresh = _register_claude_hook(args, auto=auto)
+        mode = "무설정 자동검증" if auto else "task.json 검증"
+        print(f"✅ Claude Code 연결 — Stop 훅({mode}) {'등록' if fresh else '이미 등록됨'} → {path}")
+        connected.append("claude")
+    elif target in ("claude", "all") and not claude:
+        print("⚠ claude CLI를 못 찾음 — Claude Code 설치·로그인 후 다시.")
+
+    if target in ("auto", "codex", "all") and codex:
+        print('✅ Codex CLI 감지 — owns-loop으로 검증 구동: polyrus run "목표" --backend codex')
+        connected.append("codex")
+    elif target in ("codex", "all") and not codex:
+        print("⚠ codex CLI를 못 찾음 — Codex 설치·로그인 후 다시.")
+
+    if not connected:
+        print("연결할 CLI가 없어요. `claude` 또는 `codex`를 설치·로그인하세요. (점검: polyrus route code)")
+        return 1
+    print(f"\n🔗 연결됨: {', '.join(connected)}.  이제 그 CLI로 작업하면 Polyrus가 검증합니다.")
+    return 0
 
 
 def cmd_setup(args: argparse.Namespace) -> int:
@@ -514,6 +565,14 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--build", action="store_true", help="기획 후 빌드 위임 실연(히어로 카피 검증)까지")
     pl.add_argument("--backend", choices=["claude", "codex"], default="claude", help="(--build) 빌더 백엔드")
     pl.set_defaults(fn=cmd_plan)
+
+    cn = sub.add_parser("connect", help="Claude/Codex CLI에 연결 — 한 명령(OpenClaw처럼)")
+    cn.add_argument("target", nargs="?", choices=["auto", "claude", "codex", "all"], default="auto",
+                    help="연결 대상(기본 auto: 설치된 CLI 자동 감지)")
+    add_scope(cn)
+    cn.add_argument("--classic", action="store_true", help="task.json 기반 stop-hook(기본은 무설정 auto)")
+    cn.add_argument("--dry-run", action="store_true", help="쓰지 않고 미리보기")
+    cn.set_defaults(fn=cmd_connect)
 
     st = sub.add_parser("setup", help="한 방 설정 — 환경 점검 + Claude Code 자동검증 훅 + 안내")
     add_scope(st)

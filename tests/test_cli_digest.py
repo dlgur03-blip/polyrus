@@ -84,3 +84,47 @@ def test_setup_no_hook_skips(tmp_path, capsys) -> None:
     rc = main(["setup", "--settings", str(sp), "--no-hook"])
     assert rc == 0 and not sp.exists()
     assert "건너뜀" in capsys.readouterr().out
+
+
+# ── connect (클로드/코덱스 CLI 연결) ────────────────────────────────────────────
+def test_connect_claude_registers_hook(tmp_path, monkeypatch, capsys) -> None:
+    import polyrus.cli as cli
+    from polyrus.cli import AUTO_HOOK_COMMAND, has_hook
+
+    monkeypatch.setattr(cli.shutil, "which", lambda c: "/usr/bin/claude" if c == "claude" else None)
+    sp = tmp_path / "settings.json"
+    rc = main(["connect", "--settings", str(sp)])
+    assert rc == 0
+    s = json.loads(sp.read_text(encoding="utf-8"))
+    assert has_hook(s)
+    assert s["hooks"]["Stop"][0]["hooks"][0]["command"] == AUTO_HOOK_COMMAND
+    assert "Claude Code 연결" in capsys.readouterr().out
+
+
+def test_connect_auto_detects_both(tmp_path, monkeypatch, capsys) -> None:
+    import polyrus.cli as cli
+
+    monkeypatch.setattr(cli.shutil, "which", lambda c: f"/usr/bin/{c}")  # 둘 다 있음
+    rc = main(["connect", "--settings", str(tmp_path / "s.json")])
+    out = capsys.readouterr().out
+    assert rc == 0 and "claude" in out and "codex" in out and "owns-loop" in out
+
+
+def test_connect_none_available_errors(tmp_path, monkeypatch, capsys) -> None:
+    import polyrus.cli as cli
+
+    monkeypatch.setattr(cli.shutil, "which", lambda c: None)  # 아무것도 없음
+    rc = main(["connect", "--settings", str(tmp_path / "s.json")])
+    assert rc == 1 and "설치" in capsys.readouterr().out
+
+
+def test_connect_idempotent(tmp_path, monkeypatch, capsys) -> None:
+    import polyrus.cli as cli
+
+    monkeypatch.setattr(cli.shutil, "which", lambda c: "/usr/bin/claude" if c == "claude" else None)
+    sp = tmp_path / "settings.json"
+    main(["connect", "--settings", str(sp)])
+    main(["connect", "--settings", str(sp)])  # 두 번째는 중복 등록 안 함
+    s = json.loads(sp.read_text(encoding="utf-8"))
+    cnt = sum(1 for g in s["hooks"]["Stop"] for h in g["hooks"] if "polyrus" in h["command"])
+    assert cnt == 1

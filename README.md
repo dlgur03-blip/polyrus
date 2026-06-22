@@ -8,27 +8,22 @@
 기존 에이전트 루프는 *모델이 "끝"이라고 선언하면* 종료된다.
 Polyrus는 **검증기 뱅크가 "완료"라고 판정할 때만** 종료한다.
 
-## 빠른 시작 (개인 도구 — 60초)
+## 빠른 시작 — 두 줄
 ```bash
-pip install polyrus-agent          # 배포 후. 지금은: pip install git+https://github.com/dlgur03-blip/polyrus.git
-polyrus setup                      # 환경 점검 + Claude Code 자동검증 훅 등록
-polyrus serve                      # 브라우저에서 선제질문 기획 (질문은 우리가, 당신은 대답만)
+pip install git+https://github.com/dlgur03-blip/polyrus.git
+polyrus connect          # Claude/Codex CLI에 자동 연결 (설치된 거 감지)
 ```
-- **API 키 불요.** 기획·UI·다이제스트는 모델을 안 쓰고(결정적), 코드 생성이 필요하면 네 `claude` CLI 로그인(Claude Max)으로 돈다.
-- 설치되는 명령: `polyrus serve`(UI) · `polyrus plan <도메인>` · `polyrus digest run/schedule` · `polyrus route` · `polyrus doctor`.
+끝. 이제 그 CLI로 코드 작업하면 Polyrus가 '끝' 선언을 **자동 검증**한다 — 미통과면 이어서 고치게.
 
-## 🤖 Claude Code로 자동 설치
-터미널의 Claude Code에게 이 레포 주소를 주고 아래처럼 시키면 끝:
+- **API 키 불요.** 네 `claude`/`codex` 계정 로그인 그대로 사용.
+- **연결 메커니즘**: Claude Code = Stop-hook(끝 선언을 가로채 검증) · Codex = owns-loop(`polyrus run "목표" --backend codex`).
+- 대상 지정: `polyrus connect claude` / `polyrus connect codex` / `polyrus connect all`. 미리보기 `--dry-run`. 해제 `polyrus unwrap claude`.
 
-> "이 깃헙 레포를 설치하고 설정해줘: `https://github.com/dlgur03-blip/polyrus`"
+## 🤖 Claude Code에게 시키면 자동 설치
+터미널의 Claude Code에게:
+> "이 깃헙 레포 설치하고 연결해줘: `https://github.com/dlgur03-blip/polyrus`"
 
-에이전트가 실행할 절차(이 README가 곧 설치 스펙):
-```bash
-pip install git+https://github.com/dlgur03-blip/polyrus.git         # 또는 클론 후 pip install -e .
-polyrus setup                      # 훅 등록까지 자동 (미리보기: polyrus setup --dry-run)
-polyrus doctor                     # 필요 도구 점검 (없으면 친절 안내)
-```
-설정 후 `polyrus serve`로 UI를, 또는 Claude Code에서 코드 작업하면 Polyrus가 '끝' 선언을 자동 검증한다.
+→ `pip install git+…` → `polyrus connect` 까지 알아서 함(이 README가 곧 설치 스펙).
 
 ## Claude Code에 붙이기 (wrap-first 웨지)
 Polyrus는 별도 에이전트가 아니라 **Claude Code를 감싼다**. Claude Code의 `Stop` 훅이
